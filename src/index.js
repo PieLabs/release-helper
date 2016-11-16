@@ -139,7 +139,7 @@ exports.init = function(gulp, dir = process.cwd()){
     gutil.log('v: ', v);
     pkg.version = `${v}-prerelease`;
     gutil.log('new develop version: ', pkg.version);
-    writePackageJson('./package.json', pkg);
+    writePackageJson(pkg);
     done();
   });
 
