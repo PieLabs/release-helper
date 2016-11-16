@@ -87,14 +87,26 @@ exports.init = function(gulp, dir = process.cwd()){
 
   //https://github.com/npm/node-semver/pull/96/files
   gulp.task('strip-prerelease-version', (done) => {
-    let pkg = getPackageJson();
-    gutil.log('pkg: ', typeof pkg);
-    let v = pkg.version;
-    let stripped = baseVersion(v);
-    gutil.log('strip version:', v, '->', stripped);
-    pkg.version = stripped;
-    writePackageJson(pkg);
-    done();
+
+    git.revParse({args:'--abbrev-ref HEAD'}, (err, b) => {
+
+      gutil.log('branch:', b);
+      
+      if(b !== 'master'){
+        done(new Error('not on master'));
+        return;
+      } 
+
+      let pkg = getPackageJson();
+      gutil.log('pkg: ', typeof pkg, pkg);
+      let v = pkg.version;
+      let stripped = baseVersion(v);
+      gutil.log('strip version:', v, '->', stripped);
+      pkg.version = stripped;
+      writePackageJson(pkg);
+      done();
+
+    });
   });
 
   gulp.task('ensure-clean', (done) => {
