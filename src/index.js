@@ -142,6 +142,29 @@ exports.init = function(gulp, dir = process.cwd()){
     done();
   });
 
+  const request = require('request');
+
+  gulp.task('check-github', (done) => {
+
+    let result = (body) => {
+      if(typeof body === 'string'){
+        gutil.log('need to parse the response body...')
+        return JSON.parse(body);
+      } else {
+        return body;
+      }
+    }
+
+    let url = 'https://status.github.com/api/status.json';
+    request(url, (err, response, body) => {
+      if(result(body).status === 'good'){
+        gutil.log(gutil.color.green('github is up and running...'));
+        done();
+      } else {
+        done(new Error('github is down: ' + body));
+      }
+    });
+  });
 
   gulp.task('release', (done) => {
     
@@ -151,6 +174,7 @@ exports.init = function(gulp, dir = process.cwd()){
     }
 
     runSequence(
+      'check-github',
       'ensure-clean',
       'checkout-develop',
       'pull-develop',
