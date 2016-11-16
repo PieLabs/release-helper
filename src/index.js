@@ -13,9 +13,10 @@ let bumpType = args['bump-type'] || args.bumpType || 'minor';
 let githubToken = args['github-token'] || args.githubToken || process.env.GITHUB_TOKEN;
 
 exports.init = function(gulp, dir = process.cwd()){
-  
-  let getPackageJson = () => fs.readJsonSync( path.join(dir, '/package.json'), 'utf8');
-  let writePackageJson = (obj) => fs.writeJsonSync( path.join(dir, '/package.json'), obj, 'utf8');
+
+  let pkgPath = () => path.join(dir, 'package.json');
+  let getPackageJson = () => fs.readJsonSync( pkgPath(), 'utf8');
+  let writePackageJson = (obj) => fs.writeJsonSync( pkgPath(), obj, 'utf8');
 
   let getPackageJsonVersion = () => getPackageJson().version;
 
