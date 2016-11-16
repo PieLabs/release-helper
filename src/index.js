@@ -88,6 +88,7 @@ exports.init = function(gulp, dir = process.cwd()){
   //https://github.com/npm/node-semver/pull/96/files
   gulp.task('strip-prerelease-version', (done) => {
     let pkg = getPackageJson();
+    gutil.log('pkg: ', typeof pkg);
     let v = pkg.version;
     let stripped = baseVersion(v);
     pkg.version = stripped;
