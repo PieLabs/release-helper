@@ -11,6 +11,7 @@ const _ = require('lodash'),
 let args = minimist(process.argv.slice(2));
 let bumpType = args['bump-type'] || args.bumpType || 'minor';
 let githubToken = args['github-token'] || args.githubToken || process.env.GITHUB_TOKEN;
+let skipGithub = args['skip-github'] || false;
 
 exports.init = function(gulp, dir = process.cwd()){
 
@@ -158,10 +159,16 @@ exports.init = function(gulp, dir = process.cwd()){
     let url = 'https://status.github.com/api/status.json';
     request(url, (err, response, body) => {
       if(result(body).status === 'good'){
-        gutil.log(gutil.color.green('github is up and running...'));
+        gutil.log(gutil.colors.green('github is up and running...'));
         done();
       } else {
-        done(new Error('github is down: ' + body));
+        if(skipGithub){
+          gutil.log(gutil.colors.yellow('github is down but --skip-github is set, proceeding...'));
+          done();
+        } else{
+          done(new Error('github is down: ' + body));
+
+        }
       }
     });
   });
