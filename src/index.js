@@ -91,6 +91,7 @@ exports.init = function(gulp, dir = process.cwd()){
     gutil.log('pkg: ', typeof pkg);
     let v = pkg.version;
     let stripped = baseVersion(v);
+    gutil.log('strip version:', v, '->', stripped);
     pkg.version = stripped;
     writePackageJson(pkg);
     done();
