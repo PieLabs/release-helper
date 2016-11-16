@@ -12,7 +12,7 @@ let args = minimist(process.argv.slice(2));
 let bumpType = args['bump-type'] || args.bumpType || 'minor';
 let githubToken = args['github-token'] || args.githubToken || process.env.GITHUB_TOKEN;
 
-exports.init = function(gulp, dir = __dirname){
+exports.init = function(gulp, dir = process.cwd()){
   
   let getPackageJson = () => fs.readJsonSync( path.join(dir, '/package.json'), 'utf8');
   let writePackageJson = (obj) => fs.writeJsonSync( path.join(dir, '/package.json'), JSON.stringify(obj, null, '  '), 'utf8');
