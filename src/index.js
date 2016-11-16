@@ -1,26 +1,26 @@
 const _ = require('lodash'),
   runSequence = require('run-sequence'),
   conventionalGithubReleaser = require('conventional-github-releaser'),
-  git = require('nodegit'),
+  gutil = require('gulp-util'),
+  git = require('gulp-git'),
   fs = require('fs-extra'),
   semver = require('semver'),
-  minimist = require('minimist');
-
+  minimist = require('minimist'),
+  path = require('path');
 
 let args = minimist(process.argv.slice(2));
 let bumpType = args['bump-type'] || args.bumpType || 'minor';
 let githubToken = args['github-token'] || args.githubToken || process.env.GITHUB_TOKEN;
 
+exports.init = function(gulp, dir = __dirname){
+  
+  let getPackageJson = () => fs.readJsonSync( path.join(dir, '/package.json'), 'utf8');
+  let writePackageJson = (obj) => fs.writeJsonSync( path.join(dir, '/package.json'), JSON.stringify(obj, null, '  '), 'utf8');
 
-let getPackageJson = () => fs.readJsonSync('./package.json', 'utf8');
-
-let getPackageJsonVersion = () => getPackageJson().version;
-
-
-exports.init = function (gulp) {
+  let getPackageJsonVersion = () => getPackageJson().version;
 
   let commitChanges = (msg) => {
-    return gulp.src('.')
+    return gulp.src(dir)
       .pipe(git.add())
       .pipe(git.commit(msg));
   }
@@ -46,25 +46,25 @@ exports.init = function (gulp) {
     conventionalGithubReleaser({
       type: 'oauth',
       token: githubToken,
+    }, 
+    {
+      preset: 'angular'
+    }, 
+    {},
+    { 
+      merges: true,
+      debug: gutil.log.bind(gutil)
     },
-      {
-        preset: 'angular'
-      },
-      {},
-      {
-        merges: true,
-        debug: gutil.log.bind(gutil)
-      },
       (err, result) => {
 
-        if (err) {
+        if(err){
           done(err);
         } else {
           let rejections = _.filter(result, r => r.state === 'rejected');
 
-          if (rejections.length > 0) {
+          if(rejections.length > 0){
             _.forEach(rejections, r => {
-              _.forEach(r.reason, reason => gutil.log(r.reason.message));
+              _.forEach(r.reason, reason => gutil.log(reason.message));
             });
             done(new Error('github release rejected'));
             return;
@@ -90,7 +90,7 @@ exports.init = function (gulp) {
     let v = pkg.version;
     let stripped = baseVersion(v);
     pkg.version = stripped;
-    fs.writeJsonSync('./package.json', pkg);
+    writePackageJson(pkg);
     done();
   });
 
@@ -123,14 +123,14 @@ exports.init = function (gulp) {
     gutil.log('v: ', v);
     pkg.version = `${v}-prerelease`;
     gutil.log('new develop version: ', pkg.version);
-    fs.writeJSONSync('./package.json', pkg);
+    writePackageJson('./package.json', pkg);
     done();
   });
 
 
   gulp.task('release', (done) => {
-
-    if (!githubToken) {
+    
+    if(!githubToken){
       done(new Error('No github token defined!'));
       return;
     }
@@ -153,9 +153,9 @@ exports.init = function (gulp) {
       'push-develop',
       (error) => {
         if (error) {
-          console.log(error.message);
+          gutil.log(error.message);
         } else {
-          console.log('RELEASE FINISHED SUCCESSFULLY');
+          gutil.log('RELEASE FINISHED SUCCESSFULLY');
         }
         done(error);
       });
