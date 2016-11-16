@@ -189,14 +189,14 @@ exports.init = function(gulp, dir = process.cwd()){
       'pull-master',
       'merge-develop',
       'strip-prerelease-version',
-      // 'commit-release-changes',
-      // 'create-new-tag',
-      // 'push-master',
-      // 'github-release',
-      // 'checkout-develop',
-      // 'bump-develop',
-      // 'commit-bump-changes',
-      // 'push-develop',
+      'commit-release-changes',
+      'create-new-tag',
+      'push-master',
+      'github-release',
+      'checkout-develop',
+      'bump-develop',
+      'commit-bump-changes',
+      'push-develop',
       (error) => {
         if (error) {
           gutil.log(error.message);
