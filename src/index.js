@@ -155,7 +155,7 @@ exports.init = function(gulp, dir = __dirname){
         if (error) {
           gutil.log(error.message);
         } else {
-          gutil.log('RELEASE FINISHED SUCCESSFULLY');
+          gutil.log(gutil.colors.green('RELEASE FINISHED SUCCESSFULLY'));
         }
         done(error);
       });
