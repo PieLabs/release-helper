@@ -11,6 +11,7 @@ const _ = require('lodash'),
 let args = minimist(process.argv.slice(2));
 let bumpType = args['bump-type'] || args.bumpType || 'minor';
 let githubToken = args['github-token'] || args.githubToken || process.env.GITHUB_TOKEN;
+let skipGithub = args['skip-github'] || false;
 
 exports.init = function(gulp, dir = process.cwd()){
 
@@ -87,13 +88,26 @@ exports.init = function(gulp, dir = process.cwd()){
 
   //https://github.com/npm/node-semver/pull/96/files
   gulp.task('strip-prerelease-version', (done) => {
-    let pkg = getPackageJson();
-    gutil.log('pkg: ', typeof pkg);
-    let v = pkg.version;
-    let stripped = baseVersion(v);
-    pkg.version = stripped;
-    writePackageJson(pkg);
-    done();
+
+    git.revParse({args:'--abbrev-ref HEAD'}, (err, b) => {
+
+      gutil.log('branch:', b);
+
+      if(b !== 'master'){
+        done(new Error('not on master'));
+        return;
+      } 
+
+      let pkg = getPackageJson();
+      gutil.log('pkg: ', typeof pkg, pkg);
+      let v = pkg.version;
+      let stripped = baseVersion(v);
+      gutil.log('strip version:', v, '->', stripped);
+      pkg.version = stripped;
+      writePackageJson(pkg);
+      done();
+
+    });
   });
 
   gulp.task('ensure-clean', (done) => {
@@ -129,6 +143,35 @@ exports.init = function(gulp, dir = process.cwd()){
     done();
   });
 
+  const request = require('request');
+
+  gulp.task('check-github', (done) => {
+
+    let result = (body) => {
+      if(typeof body === 'string'){
+        gutil.log('need to parse the response body...')
+        return JSON.parse(body);
+      } else {
+        return body;
+      }
+    }
+
+    let url = 'https://status.github.com/api/status.json';
+    request(url, (err, response, body) => {
+      if(result(body).status === 'good'){
+        gutil.log(gutil.colors.green('github is up and running...'));
+        done();
+      } else {
+        if(skipGithub){
+          gutil.log(gutil.colors.yellow('github is down but --skip-github is set, proceeding...'));
+          done();
+        } else{
+          done(new Error('github is down: ' + body));
+
+        }
+      }
+    });
+  });
 
   gulp.task('release', (done) => {
     
@@ -138,6 +181,7 @@ exports.init = function(gulp, dir = process.cwd()){
     }
 
     runSequence(
+      'check-github',
       'ensure-clean',
       'checkout-develop',
       'pull-develop',
@@ -145,14 +189,14 @@ exports.init = function(gulp, dir = process.cwd()){
       'pull-master',
       'merge-develop',
       'strip-prerelease-version',
-      // 'commit-release-changes',
-      // 'create-new-tag',
-      // 'push-master',
-      // 'github-release',
-      // 'checkout-develop',
-      // 'bump-develop',
-      // 'commit-bump-changes',
-      // 'push-develop',
+      'commit-release-changes',
+      'create-new-tag',
+      'push-master',
+      'github-release',
+      'checkout-develop',
+      'bump-develop',
+      'commit-bump-changes',
+      'push-develop',
       (error) => {
         if (error) {
           gutil.log(error.message);
