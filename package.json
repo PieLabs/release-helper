@@ -1,6 +1,6 @@
 {
   "name": "release-helper",
-  "version": "1.2.0-prerelease",
+  "version": "1.2.0",
   "description": "some release tasks",
   "main": "src/index.js",
   "scripts": {
