@@ -13,18 +13,21 @@ let bumpType = args['bump-type'] || args.bumpType || 'minor';
 let githubToken = args['github-token'] || args.githubToken || process.env.GITHUB_TOKEN;
 let skipGithub = args['skip-github'] || false;
 
-exports.init = function(gulp, dir = process.cwd()){
+exports.init = function (gulp, dir = process.cwd()) {
 
   let pkgPath = () => path.join(dir, 'package.json');
-  let getPackageJson = () => fs.readJsonSync( pkgPath(), 'utf8');
-  let writePackageJson = (obj) => fs.writeJsonSync( pkgPath(), obj, 'utf8');
+  let getPackageJson = () => fs.readJsonSync(pkgPath(), 'utf8');
+  let writePackageJson = (obj) => fs.writeJsonSync(pkgPath(), obj, 'utf8');
 
   let getPackageJsonVersion = () => getPackageJson().version;
 
   let commitChanges = (msg) => {
     return gulp.src(dir)
       .pipe(git.add())
-      .pipe(git.commit(msg));
+      .pipe(git.commit(msg))
+      .on('error', (e) => {
+        gutil.log(`[commitChanges] error: ${e.message}`, gutil.colors.red);
+      });
   }
 
   gulp.task('commit-release-changes', () => commitChanges(`[release] set version number to ${getPackageJsonVersion()}`));
@@ -48,23 +51,23 @@ exports.init = function(gulp, dir = process.cwd()){
     conventionalGithubReleaser({
       type: 'oauth',
       token: githubToken,
-    }, 
-    {
-      preset: 'angular'
-    }, 
-    {},
-    { 
-      merges: true,
-      debug: gutil.log.bind(gutil)
     },
+      {
+        preset: 'angular'
+      },
+      {},
+      {
+        merges: true,
+        debug: gutil.log.bind(gutil)
+      },
       (err, result) => {
 
-        if(err){
+        if (err) {
           done(err);
         } else {
           let rejections = _.filter(result, r => r.state === 'rejected');
 
-          if(rejections.length > 0){
+          if (rejections.length > 0) {
             _.forEach(rejections, r => {
               _.forEach(r.reason, reason => gutil.log(reason.message));
             });
@@ -89,14 +92,14 @@ exports.init = function(gulp, dir = process.cwd()){
   //https://github.com/npm/node-semver/pull/96/files
   gulp.task('strip-prerelease-version', (done) => {
 
-    git.revParse({args:'--abbrev-ref HEAD'}, (err, b) => {
+    git.revParse({ args: '--abbrev-ref HEAD' }, (err, b) => {
 
       gutil.log('branch:', b);
 
-      if(b !== 'master'){
+      if (b !== 'master') {
         done(new Error('not on master'));
         return;
-      } 
+      }
 
       let pkg = getPackageJson();
       gutil.log('pkg: ', typeof pkg, pkg);
@@ -148,7 +151,7 @@ exports.init = function(gulp, dir = process.cwd()){
   gulp.task('check-github', (done) => {
 
     let result = (body) => {
-      if(typeof body === 'string'){
+      if (typeof body === 'string') {
         gutil.log('need to parse the response body...')
         return JSON.parse(body);
       } else {
@@ -158,14 +161,14 @@ exports.init = function(gulp, dir = process.cwd()){
 
     let url = 'https://status.github.com/api/status.json';
     request(url, (err, response, body) => {
-      if(result(body).status === 'good'){
+      if (result(body).status === 'good') {
         gutil.log(gutil.colors.green('github is up and running...'));
         done();
       } else {
-        if(skipGithub){
+        if (skipGithub) {
           gutil.log(gutil.colors.yellow('github is down but --skip-github is set, proceeding...'));
           done();
-        } else{
+        } else {
           done(new Error('github is down: ' + body));
 
         }
@@ -174,8 +177,8 @@ exports.init = function(gulp, dir = process.cwd()){
   });
 
   gulp.task('release', (done) => {
-    
-    if(!githubToken){
+
+    if (!githubToken) {
       done(new Error('No github token defined!'));
       return;
     }
@@ -199,7 +202,8 @@ exports.init = function(gulp, dir = process.cwd()){
       'push-develop',
       (error) => {
         if (error) {
-          gutil.log(error.message);
+          gutil.log(error.stack);
+          gutil.log(`!! ${gutil.colors.red(error.message)}`);
         } else {
           gutil.log(gutil.colors.green('RELEASE FINISHED SUCCESSFULLY'));
         }
