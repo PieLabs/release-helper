@@ -20,7 +20,7 @@
   },
   "homepage": "https://github.com/PieLabs/release-helper#readme",
   "devDependencies": {
-    "eslint": "^3.10.2",
+    "eslint": "^6.6.0",
     "gulp": "^3.9.1"
   },
   "peerDependencies": {
